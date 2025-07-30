@@ -98,10 +98,10 @@ DROP table customers2;
 CREATE TABLE customers (id number(9,0) primary key, name varchar2(50));
 ALTER TABLE customers ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
 
-INSERT INTO customers VALUES (5021, 'Salles Thomas');
-INSERT INTO customers VALUES (5022, 'George Bailey');
-INSERT INTO customers VALUES (5023, 'Edward Walker');
-INSERT INTO customers VALUES (5024, 'Anne Kretchmar');
+INSERT INTO customers VALUES (6021, 'Salles Thomas');
+INSERT INTO customers VALUES (6022, 'George Bailey');
+INSERT INTO customers VALUES (6023, 'Edward Walker');
+INSERT INTO customers VALUES (6024, 'Anne Kretchmar');
 
 CREATE TABLE customers1 (id number(9,0) primary key, name varchar2(50));
 ALTER TABLE customers1 ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
