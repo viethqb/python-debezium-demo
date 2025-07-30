@@ -1,0 +1,40 @@
+services:
+  oracle:
+    image: scalified/oracle-database:12.2.0.1-ee
+    container_name: oracle
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_SID=ORCLCDB
+      - ORACLE_PDB=ORCLPDB1
+      - ORACLE_PWD=dbz 
+    restart: unless-stopped
+
+  postgres:
+    image: docker.io/bitnami/postgresql:16.3.0
+    container_name: postgres
+    environment:
+      - POSTGRESQL_PASSWORD=postgres123AA
+  dbz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dbz
+    # command: ["python", "src/dbz_custom_handler.py"]
+    command: ["python", "src/dbz_oracle_to_postgres_dlt_handler.py"]
+    # command: ["sleep", "infinity"]
+    volumes:
+      - ./storage:/app/storage
+    environment:
+      - ORACLE_HOST=oracle
+      - ORACLE_PORT=1521
+      - ORACLE_USER=c##dbzuser
+      - ORACLE_PASSWORD=dbz
+      - ORACLE_DBNAME=ORCLCDB
+      - ORACLE_PDB_NAME=ORCLPDB1
+      - ORACLE_TABLE_INCLUDE_LIST=C##DBZUSER.CUSTOMERS,C##DBZUSER.CUSTOMERS1,C##DBZUSER.CUSTOMERS2
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_USER=postgres
+      - POSTGRESQL_PASSWORD=postgres123AA
+      - POSTGRESQL_DB=postgres
