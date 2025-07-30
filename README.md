@@ -88,7 +88,7 @@ GRANT SELECT ON V_$ARCHIVE_DEST_STATUS TO c##dbzuser CONTAINER=ALL;
 GRANT SELECT ON V_$TRANSACTION TO c##dbzuser CONTAINER=ALL;
 ```
 
-### 
+### CREATE TABLE & ADD DATA
 ```bash
 docker exec -it -e ORACLE_SID=ORCLPDB1 oracle sqlplus c##dbzuser@ORCLPDB1
 
