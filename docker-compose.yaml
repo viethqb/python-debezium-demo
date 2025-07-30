@@ -20,8 +20,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: dbz
-    # command: ["python", "src/dbz_custom_handler.py"]
-    command: ["python", "src/dbz_oracle_to_postgres_dlt_handler.py"]
+    command: ["python", "src/dbz_custom_handler.py"]
     # command: ["sleep", "infinity"]
     volumes:
       - ./storage:/app/storage

@@ -153,3 +153,8 @@ psql -h postgresql -p 5432 -d postgres -U postgres
 
 ## START DBZ CONTAINER
 
+```bash
+rm -rf ./storage/*
+docker compose up -d dbz
+docker logs -f dbz
+```
