@@ -8,7 +8,7 @@
 docker compose up -d oracle
 ```
 ### CONNECT TO ORACLE DB
-<!-- https://debezium.io/blog/2022/09/30/debezium-oracle-series-part-1/ -->
+https://debezium.io/blog/2022/09/30/debezium-oracle-series-part-1/
 
 ```bash
 docker exec -e ORACLE_SID=ORCLCDB -it oracle sqlplus sys as sysdba
