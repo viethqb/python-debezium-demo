@@ -8,6 +8,8 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 RUN pip install "git+https://github.com/viethqb/pydbzengine@main#egg=pydbzengine[dev,dlt,iceberg]"
 
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
 COPY src src

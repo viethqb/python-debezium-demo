@@ -98,10 +98,10 @@ DROP table customers2;
 CREATE TABLE customers (id number(9,0) primary key, name varchar2(50));
 ALTER TABLE customers ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
 
-INSERT INTO customers VALUES (6021, 'Salles Thomas');
-INSERT INTO customers VALUES (6022, 'George Bailey');
-INSERT INTO customers VALUES (6023, 'Edward Walker');
-INSERT INTO customers VALUES (6024, 'Anne Kretchmar');
+INSERT INTO customers VALUES (1021, 'Salles Thomas');
+INSERT INTO customers VALUES (1022, 'George Bailey');
+INSERT INTO customers VALUES (1023, 'Edward Walker');
+INSERT INTO customers VALUES (1024, 'Anne Kretchmar');
 
 CREATE TABLE customers1 (id number(9,0) primary key, name varchar2(50));
 ALTER TABLE customers1 ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
@@ -114,10 +114,10 @@ INSERT INTO customers1 VALUES (2024, 'Anne Kretchmar');
 CREATE TABLE customers2 (id number(9,0) primary key, name varchar2(50));
 ALTER TABLE customers2 ADD SUPPLEMENTAL LOG DATA (ALL) COLUMNS;
 
-INSERT INTO customers2 VALUES (2021, 'Salles Thomas');
-INSERT INTO customers2 VALUES (2022, 'George Bailey');
-INSERT INTO customers2 VALUES (2023, 'Edward Walker');
-INSERT INTO customers2 VALUES (2024, 'Anne Kretchmar');
+INSERT INTO customers2 VALUES (3021, 'Salles Thomas');
+INSERT INTO customers2 VALUES (3022, 'George Bailey');
+INSERT INTO customers2 VALUES (3023, 'Edward Walker');
+INSERT INTO customers2 VALUES (3024, 'Anne Kretchmar');
 
 ```
 
@@ -132,7 +132,7 @@ docker compose up -d postgres
 ### CONNECT TO POSTGRES DB
 ```bash
 docker exec -it postgres bash
-psql -h postgresql -p 5432 -d postgres -U postgres
+psql -h postgres -p 5432 -d postgres -U postgres
 # password: postgres123AA
 
 # postgres=# \l

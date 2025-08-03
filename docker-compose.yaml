@@ -20,7 +20,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: dbz
-    command: ["python", "src/dbz_custom_handler.py"]
+    command: ["python", "src/dbz_oracle_to_postgres_handler.py"]
+    # command: ["python", "src/dbz_custom_handler.py"]
     # command: ["sleep", "infinity"]
     volumes:
       - ./storage:/app/storage
@@ -37,3 +38,7 @@ services:
       - POSTGRESQL_USER=postgres
       - POSTGRESQL_PASSWORD=postgres123AA
       - POSTGRESQL_DB=postgres
+      - POSTGRESQL_INSERT_BATCH_SIZE=1000
+      - OFFSET_FILE=/app/storage/offsets.dat
+      - HISTORY_FILE=/app/storage/history.dat
+      - CLEAR_OFFSET_AND_HISTORY_FILE=false
