@@ -30,8 +30,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: dbz
-    # command: ["python", "src/dbz_oracle_to_mssql_handler.py"]
-    command: ["python", "src/dbz_oracle_to_postgres_handler.py"]
+    command: ["python", "src/dbz_oracle_to_mssql_handler.py"]
+    # command: ["python", "src/dbz_oracle_to_postgres_handler.py"]
     # command: ["python", "src/dbz_custom_handler.py"]
     # command: ["sleep", "infinity"]
     volumes:
