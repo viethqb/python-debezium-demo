@@ -15,11 +15,22 @@ services:
     container_name: postgres
     environment:
       - POSTGRESQL_PASSWORD=postgres123AA
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=mssql123AA
+    ports:
+      - "1433:1433"
+    restart: unless-stopped
   dbz:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: dbz
+    # command: ["python", "src/dbz_oracle_to_mssql_handler.py"]
     command: ["python", "src/dbz_oracle_to_postgres_handler.py"]
     # command: ["python", "src/dbz_custom_handler.py"]
     # command: ["sleep", "infinity"]
@@ -39,6 +50,12 @@ services:
       - POSTGRESQL_PASSWORD=postgres123AA
       - POSTGRESQL_DB=postgres
       - POSTGRESQL_INSERT_BATCH_SIZE=1000
+      - MSSQL_HOST=mssql
+      - MSSQL_PORT=1433
+      - MSSQL_USER=sa
+      - MSSQL_PASSWORD=mssql123AA
+      - MSSQL_DB=raw_db
+      - MSSQL_INSERT_BATCH_SIZE=1000
       - OFFSET_FILE=/app/storage/offsets.dat
       - HISTORY_FILE=/app/storage/history.dat
       - CLEAR_OFFSET_AND_HISTORY_FILE=false

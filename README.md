@@ -151,6 +151,26 @@ psql -h postgres -p 5432 -d postgres -U postgres
 # postgres=# 
 ```
 
+## PREPARE MSSQL DB
+### START MSSQL DB
+
+```bash
+docker compose up -d mssql
+
+docker exec -it mssql bash
+/opt/mssql-tools18/bin/sqlcmd -S localhost -U SA -P "mssql123AA" -C
+
+SELECT name FROM sys.databases;
+go
+
+CREATE DATABASE raw_db;
+go
+
+SELECT name FROM sys.databases;
+go
+```
+
+
 ## START DBZ CONTAINER
 
 ```bash

@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
-import psycopg2
-from psycopg2 import sql
 import uuid
 import json
+import pyodbc
 
 from typing import List
 from pydbzengine import ChangeEvent, BasePythonChangeHandler
@@ -34,12 +33,12 @@ ORACLE_PASSWORD = os.getenv("ORACLE_PASSWORD", "dbz")
 ORACLE_DBNAME = os.getenv("ORACLE_DBNAME", "ORCLCDB")
 ORACLE_PDB_NAME = os.getenv("ORACLE_PDB_NAME", "ORCLPDB1")
 ORACLE_TABLE_INCLUDE_LIST = os.getenv("ORACLE_TABLE_INCLUDE_LIST", "C##DBZUSER.CUSTOMERS")
-POSTGRESQL_HOST = os.getenv("POSTGRESQL_HOST", "postgres")
-POSTGRESQL_PORT = os.getenv("POSTGRESQL_PORT", 5432)
-POSTGRESQL_USER = os.getenv("POSTGRESQL_USER", "postgres")
-POSTGRESQL_PASSWORD = os.getenv("POSTGRESQL_PASSWORD", "postgres123AA")
-POSTGRESQL_DB = os.getenv("POSTGRESQL_DB", "postgres")
-POSTGRESQL_INSERT_BATCH_SIZE = os.getenv("POSTGRESQL_INSERT_BATCH_SIZE", 1000)
+MSSQL_HOST = os.getenv("MSSQL_HOST", "mssql")
+MSSQL_PORT = os.getenv("MSSQL_PORT", 1433)
+MSSQL_USER = os.getenv("MSSQL_USER", "SA")
+MSSQL_PASSWORD = os.getenv("MSSQL_PASSWORD", "mssql123AA")
+MSSQL_DB = os.getenv("MSSQL_DB", "raw_db")
+MSSQL_INSERT_BATCH_SIZE = os.getenv("MSSQL_INSERT_BATCH_SIZE", 1000)
 
 
 
@@ -48,99 +47,123 @@ class RawChangeHandler(BasePythonChangeHandler):
     A custom change event handler that stores raw Debezium events in PostgreSQL.
     The target table has columns: uuid, destination, key, value.
     """
-    BATCH_SIZE = int(POSTGRESQL_INSERT_BATCH_SIZE)
+    BATCH_SIZE = int(MSSQL_INSERT_BATCH_SIZE)
 
     def __init__(self):
         super().__init__()
-        # Initialize PostgreSQL connection
-        self.pg_conn = psycopg2.connect(
-            host=POSTGRESQL_HOST,
-            port=POSTGRESQL_PORT,
-            database=POSTGRESQL_DB,
-            user=POSTGRESQL_USER,
-            password=POSTGRESQL_PASSWORD
+        # Initialize MSSQL connection
+        self.conn_str = (
+            f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+            f"SERVER={MSSQL_HOST},{MSSQL_PORT};"
+            f"DATABASE={MSSQL_DB};"
+            f"UID={MSSQL_USER};"
+            f"PWD={MSSQL_PASSWORD};"
+            "TrustServerCertificate=yes;"
         )
-        self.pg_cursor = self.pg_conn.cursor()
         
-        # Ensure the raw_events table exists
-        self._create_raw_events_table()
+        try:
+            self.mssql_conn = pyodbc.connect(self.conn_str)
+            self.mssql_conn.autocommit = False  # Enable transactions
+            self.mssql_cursor = self.mssql_conn.cursor()
+            
+            # Ensure the raw_events table exists
+            self._create_raw_events_table()
+        except pyodbc.Error as e:
+            print(f"Error connecting to MSSQL: {str(e)}")
+            raise
     
     def __del__(self):
-        # Clean up PostgreSQL connection when the handler is destroyed
-        if hasattr(self, 'pg_cursor'):
-            self.pg_cursor.close()
-        if hasattr(self, 'pg_conn'):
-            self.pg_conn.close()
+        # Clean up MSSQL connection when the handler is destroyed
+        if hasattr(self, 'mssql_cursor'):
+            self.mssql_cursor.close()
+        if hasattr(self, 'mssql_conn'):
+            self.mssql_conn.close()
     
     def _create_raw_events_table(self):
         """Create the raw_events table if it doesn't exist"""
         create_table_query = """
-        CREATE TABLE IF NOT EXISTS raw_events (
-            uuid UUID PRIMARY KEY,
-            destination TEXT,
-            key JSONB,
-            value JSONB,
-            processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'raw_events')
+        BEGIN
+            CREATE TABLE raw_events (
+                uuid UNIQUEIDENTIFIER PRIMARY KEY,
+                destination NVARCHAR(255),
+                [key] NVARCHAR(MAX),
+                [value] NVARCHAR(MAX),
+                processed_at DATETIME DEFAULT GETDATE()
+            )
+        END
         """
-        self.pg_cursor.execute(create_table_query)
-        self.pg_conn.commit()
+        try:
+            self.mssql_cursor.execute(create_table_query)
+            self.mssql_conn.commit()
+        except pyodbc.Error as e:
+            print(f"Error creating table: {str(e)}")
+            self.mssql_conn.rollback()
+            raise
 
     def _insert_batch(self, batch_data):
         """Helper method to insert a batch of records"""
         if not batch_data:
             return
         
+        # Using parameterized query with pyodbc's parameter style
         insert_query = """
-        INSERT INTO raw_events (uuid, destination, key, value)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO raw_events (uuid, destination, [key], [value])
+        VALUES (?, ?, ?, ?)
         """
         
         try:
-            self.pg_cursor.executemany(insert_query, batch_data)
-            self.pg_conn.commit()
+            self.mssql_cursor.executemany(insert_query, batch_data)
+            self.mssql_conn.commit()
             print(f"Successfully stored {len(batch_data)} records")
-        except Exception as e:
+        except pyodbc.Error as e:
             print(f"Error processing batch: {str(e)}")
-            self.pg_conn.rollback()
+            self.mssql_conn.rollback()
             raise
 
     def handleJsonBatch(self, records: List[ChangeEvent]):
         """
-        Handles a batch of Debezium change events by storing them raw in PostgreSQL.
+        Handles a batch of Debezium change events by storing them raw in MSSQL.
+        Process records in batches of BATCH_SIZE.
         """
-
         print(f"Processing {len(records)} records")
         
         try:
             batch_data = []
             for record in records:
                 # Generate a unique UUID for each record
-                record_uuid = uuid.uuid4()
+                record_uuid = str(uuid.uuid4())  # MSSQL expects string representation
                 
                 # Get the raw data from the ChangeEvent
                 destination = record.destination()
                 # key = json.dumps(record.key()) if record.key() else None
                 # value = json.dumps(record.value()) if record.value() else None
+
                 key = record.key() if record.key() else None
                 value = record.value() if record.value() else None
                 
                 batch_data.append((
-                    str(record_uuid),
+                    record_uuid,
                     destination,
                     key,
                     value
                 ))
                 
-                # print(f"Storing record: {destination} | {key} | {value}")
-
+                # If batch size reached, insert
                 if len(batch_data) >= self.BATCH_SIZE:
                     self._insert_batch(batch_data)
                     batch_data = []  # Reset batch
             
-            # Insert các record còn lại sau khi vòng lặp kết thúc
+            # Insert remaining records
             if batch_data:
                 self._insert_batch(batch_data)
+            
+        except Exception as e:
+            print(f"Error processing records: {str(e)}")
+            # Rollback on error
+            if hasattr(self, 'mssql_conn'):
+                self.mssql_conn.rollback()
+            raise
                         
         except Exception as e:
             print(f"Error processing records: {str(e)}")
@@ -187,6 +210,5 @@ if __name__ == '__main__':
 
     # Create a DebeziumJsonEngine instance, passing the configuration properties and the custom change event handler.
     engine = DebeziumJsonEngine(properties=props, handler=RawChangeHandler())
-
     # Start the Debezium engine to begin consuming and processing change events.
     engine.run()
