@@ -164,11 +164,6 @@ class RawChangeHandler(BasePythonChangeHandler):
             if hasattr(self, 'mssql_conn'):
                 self.mssql_conn.rollback()
             raise
-                        
-        except Exception as e:
-            print(f"Error processing records: {str(e)}")
-            self.pg_conn.rollback()
-            raise
 
 
 if __name__ == '__main__':
